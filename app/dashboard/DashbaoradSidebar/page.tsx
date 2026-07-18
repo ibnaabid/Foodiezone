@@ -28,7 +28,7 @@ const menuByRole = {
     { label: "Overview", href: "/dashboard/restaurant", icon: LayoutDashboard },
     { label: "Manage_Menu", href: "/dashboard/restaurant/Manage-Menu", icon: ClipboardList },
     { label: "Add_Menu", href: "/dashboard/restaurant/Add-menu", icon: UtensilsCrossed },
-    { label: "Analytics", href: "/dashboard/restaurant/analytics", icon: TrendingUp },
+    { label: "privacy", href: "/dashboard/restaurant/privacy", icon: TrendingUp },
     { label: "Settings", href: "/dashboard/restaurant/settings", icon: Settings },
   ],
 };

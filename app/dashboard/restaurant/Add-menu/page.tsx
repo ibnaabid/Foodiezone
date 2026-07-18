@@ -68,7 +68,6 @@ export default function AddMenuItemPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Preview only — real upload should go to your storage (Cloudinary/S3/etc.)
     const objectUrl = URL.createObjectURL(file);
     setImagePreview(objectUrl);
     setFormData((prev) => ({ ...prev, image: objectUrl }));
@@ -107,9 +106,20 @@ export default function AddMenuItemPage() {
       setSuccess(true);
       setLoading(false);
 
+      // page redirect na kore, ei page e thakbe — form reset + data refresh
       setTimeout(() => {
-        router.push("/dashboard/restaurant/menu");
-      }, 1200);
+        setSuccess(false);
+        setFormData({
+          name: "",
+          description: "",
+          price: "",
+          category: "",
+          image: "",
+          available: true,
+        });
+        setImagePreview(null);
+        router.refresh(); // shudhu cached data revalidate hobe, page change hobe na
+      }, 2000);
     } catch (err) {
       setErrorMsg("Network error — please try again");
       setLoading(false);
@@ -122,7 +132,6 @@ export default function AddMenuItemPage() {
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-900/10 rounded-full blur-3xl" />
 
       <div className="relative max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Header */}
         <div className="mb-8">
           <Link
             href="/dashboard/restaurant/menu"
@@ -141,7 +150,7 @@ export default function AddMenuItemPage() {
           <div className="backdrop-blur-xl bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-8 flex flex-col items-center text-center">
             <CheckCircle2 size={40} className="text-emerald-400 mb-3" />
             <p className="text-white font-medium">Menu item added successfully</p>
-            <p className="text-neutral-400 text-sm mt-1">Redirecting to your menu...</p>
+            <p className="text-neutral-400 text-sm mt-1">You can add another item now</p>
           </div>
         ) : (
           <form
@@ -154,7 +163,6 @@ export default function AddMenuItemPage() {
               </div>
             )}
 
-            {/* Image upload */}
             <div>
               <label className="block text-sm font-medium text-neutral-300 mb-2">
                 Dish photo
@@ -164,10 +172,9 @@ export default function AddMenuItemPage() {
                 className="flex items-center justify-center gap-3 h-40 rounded-xl border-2 border-dashed border-white/15 hover:border-emerald-500/40 bg-white/[0.02] cursor-pointer transition-colors overflow-hidden relative"
               >
                 {imagePreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <Image
-                  height={300}
-                  width={300}
+                    height={300}
+                    width={300}
                     src={imagePreview}
                     alt="Preview"
                     unoptimized
@@ -189,7 +196,6 @@ export default function AddMenuItemPage() {
               </label>
             </div>
 
-            {/* Name */}
             <div>
               <label className="block text-sm font-medium text-neutral-300 mb-2">
                 Dish name
@@ -207,7 +213,6 @@ export default function AddMenuItemPage() {
               </div>
             </div>
 
-            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-neutral-300 mb-2">
                 Description
@@ -221,7 +226,6 @@ export default function AddMenuItemPage() {
               />
             </div>
 
-            {/* Price + Category */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-300 mb-2">
@@ -269,7 +273,6 @@ export default function AddMenuItemPage() {
               </div>
             </div>
 
-            {/* Availability toggle */}
             <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.03] border border-white/10">
               <div>
                 <p className="text-sm font-medium text-white">Available for order</p>
@@ -292,11 +295,10 @@ export default function AddMenuItemPage() {
               </button>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-medium rounded-lg py-3.5 transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 rounded-3xl disabled:opacity-60 text-white font-medium py-3.5 transition-colors"
             >
               {loading && <Loader2 size={18} className="animate-spin" />}
               {loading ? "Adding item..." : "Add to menu"}
