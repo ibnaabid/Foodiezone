@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, Sparkles } from "lucide-react";
 import { authClient } from "../lib/auth-client";
 
+
 type UserRole = "customer" | "restaurant" | "admin";
 
 export default function LoginPage() {
@@ -25,7 +26,10 @@ export default function LoginPage() {
     setErrorMsg("");
     setLoading(true);
 
-    const { data, error } = await authClient.signIn.email({ email, password });
+    const { data, error } = await authClient.signIn.email({ 
+      email, 
+      password 
+    });
 
     if (error) {
       setErrorMsg(error.message || "Invalid email or password");
@@ -33,17 +37,21 @@ export default function LoginPage() {
       return;
     }
 
+    // setLoading(false); // এটি নিচে সরানো হয়েছে
+
+    // রোল চেক করে রিডাইরেক্ট
     const role = (data?.user as { role?: UserRole })?.role;
-    setLoading(false);
-
-    // Redirect based on role
-    if (role === "restaurant") router.push("/dashboard/restaurant");
-    else if (role === "admin") router.push("/dashboard/admin");
-    else router.push("/dashboard/customer");
     
-    router.refresh();
+    if (role === "restaurant") {
+      router.push("/dashboard/restaurant");
+    } else if (role === "admin") {
+      router.push("/dashboard/admin");
+    } else {
+      router.push("/dashboard/customer");
+    }
+    
+    // router.refresh(); // এটি সরিয়ে দিন, এটি লুপ তৈরি করতে পারে
   };
-
   const handleGoogleLogin = async () => {
     await authClient.signIn.social({
       provider: "google",

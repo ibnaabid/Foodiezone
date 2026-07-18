@@ -15,9 +15,10 @@ interface TopbarProps {
 const menuByRole = {
   customer: [
     { label: "Overview", href: "/dashboard/customer" },
-    { label: "My Orders", href: "/orders" },
+ 
     { label: "Favorites", href: "/favorites" },
     { label: "Addresses", href: "/addresses" },
+    { label: "Update Profile", href: "/profile" },
   ],
   restaurant: [
     { label: "Overview", href: "/dashboard/restaurant" },

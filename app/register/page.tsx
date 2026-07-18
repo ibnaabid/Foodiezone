@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Store, User, Loader2 } from "lucide-react";
 import { authClient } from "../lib/auth-client";
 
+
 type UserRole = "customer" | "restaurant" | "admin";
 
 interface RegisterFormData {
