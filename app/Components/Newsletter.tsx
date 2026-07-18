@@ -2,31 +2,28 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Button, Input } from "@heroui/react";
 import { Send, Mail, CheckCircle2 } from "lucide-react";
 
 export default function Newsletter() {
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
 
-  // সাবস্ক্রাইব বাটনে ক্লিক করলে কী হবে (এটি ডামি ফাংশন, আপনি চাইলে API অ্যাড করতে পারেন)
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
       setIsSubscribed(true);
-      // এখানে আপনি আপনার API বা ডাটাবেসে ইমেইল সেভ করার লজিক লিখতে পারেন।
       setTimeout(() => {
         setIsSubscribed(false);
         setEmail("");
-      }, 3000); // ৩ সেকেন্ড পর আবার আগের অবস্থায় ফিরে যাবে
+      }, 3000);
     }
   };
 
   return (
     <section className="py-24 bg-gray-50 relative overflow-hidden">
       {/* Decorative Background Elements */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
+      <div className="absolute top-0 right-0 w-64 h-64 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
 
       <div className="max-w-5xl mx-auto px-6 lg:px-8 relative z-10">
         <motion.div 
@@ -46,7 +43,7 @@ export default function Newsletter() {
             Subscribe for <span className="text-orange-600">Special Offers!</span>
           </h2>
           <p className="text-gray-500 mb-10 max-w-2xl mx-auto text-lg">
-            Foodi-এর নিউজলেটারে সাবস্ক্রাইব করুন এবং আপনার প্রথম অর্ডারে ২০% ছাড় পান। নতুন মেনু ও অফারের আপডেট পাবেন সবার আগে।
+            Foodi-এর নিউজলেটারে সাবস্ক্রাইব করুন এবং আপনার প্রথম অর্ডারে ২০% ছাড় পান। নতুন মেনু ও অফারের আপডেট পাবেন সবার আগে।
           </p>
           
           <form onSubmit={handleSubscribe} className="max-w-lg mx-auto">
@@ -61,28 +58,25 @@ export default function Newsletter() {
               </motion.div>
             ) : (
               <div className="flex flex-col sm:flex-row gap-3">
-                <Input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email address..." 
-                  size="lg"
-                  isRequired
-                  startContent={<Mail size={18} className="text-gray-400" />}
-                  className="w-full" 
-                  classNames={{ 
-                    inputWrapper: "bg-gray-50 border border-gray-200 hover:border-orange-500 focus-within:border-orange-500 shadow-none",
-                    input: "text-gray-900 placeholder:text-gray-400"
-                  }}
-                />
-                <Button 
+                <div className="relative w-full">
+                  <span className="absolute left-4 top-4 text-gray-400">
+                    <Mail size={18} />
+                  </span>
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email address..." 
+                    required
+                    className="w-full h-14 pl-12 pr-4 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-orange-500 transition-all text-gray-900"
+                  />
+                </div>
+                <button 
                   type="submit"
-                  size="lg" 
-                  className="bg-orange-600 text-white font-bold px-8 w-full sm:w-auto hover:bg-orange-700 shadow-md hover:shadow-lg transition-all"
-                  endContent={<Send size={18} />}
+                  className="h-14 bg-orange-600 text-white font-bold px-8 w-full sm:w-auto rounded-full hover:bg-orange-700 shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                 >
-                  Subscribe
-                </Button>
+                  Subscribe <Send size={18} />
+                </button>
               </div>
             )}
             <p className="text-xs text-gray-400 mt-4">

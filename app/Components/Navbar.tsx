@@ -43,7 +43,7 @@ export default function Navbar() {
   const navLinks = [
     { label: "Home", href: "/", icon: Home },
     { label: "Menu", href: "/menu", icon: UtensilsCrossed },
-    { label: "Orders", href: "/orders", icon: ShoppingBag },
+
     { label: "About", href: "/about", icon: Info },
     { label: "Contact", href: "/contact", icon: Phone },
   ];
