@@ -26,32 +26,29 @@ export default function LoginPage() {
     setErrorMsg("");
     setLoading(true);
 
-    const { data, error } = await authClient.signIn.email({ 
-      email, 
-      password 
-    });
+    const { data, error } = await authClient.signIn.email({ email, password });
 
     if (error) {
       setErrorMsg(error.message || "Invalid email or password");
       setLoading(false);
       return;
     }
+    console.log(email,password)
 
-    // setLoading(false); // এটি নিচে সরানো হয়েছে
+    const user = data?.user as any;
+    const role = user?.role;
 
-    // রোল চেক করে রিডাইরেক্ট
-    const role = (data?.user as { role?: UserRole })?.role;
-    
+    setLoading(false);
+
+    // শুধু আপনার কাছে থাকা দুটি রোলের জন্য কন্ডিশন রাখুন
     if (role === "restaurant") {
       router.push("/dashboard/restaurant");
-    } else if (role === "admin") {
-      router.push("/dashboard/admin");
     } else {
+      // যদি রোল 'customer' হয় অথবা রোল না থাকে, তবে ডিফল্ট ড্যাশবোর্ডে যাবে
       router.push("/dashboard/customer");
     }
-    
-    // router.refresh(); // এটি সরিয়ে দিন, এটি লুপ তৈরি করতে পারে
   };
+
   const handleGoogleLogin = async () => {
     await authClient.signIn.social({
       provider: "google",

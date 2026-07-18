@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Search, Sparkles } from "lucide-react";
-import MenuCard from "./Menucard";
+import MenuCard from "./menuCard/page";
+
 
 
 interface Product {
