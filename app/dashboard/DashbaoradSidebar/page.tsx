@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Settings,
   ClipboardList,
+  Star,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -20,7 +21,7 @@ interface SidebarProps {
 const menuByRole = {
   customer: [
     { label: "Overview", href: "/dashboard/customer", icon: LayoutDashboard },
-    { label: "My Orders", href: "/dashboard/customer/orders", icon: ShoppingBag },
+    { label: "Reviews", href: "/dashboard/customer/reviews", icon: Star },
     { label: "Favorites", href: "/dashboard/customer/favorites", icon: Heart },
     { label: "Addresses", href: "/dashboard/customer/addresses", icon: MapPin },
   ],

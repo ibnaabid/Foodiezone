@@ -18,7 +18,7 @@ const menuByRole = {
  
     { label: "Favorites", href: "/favorites" },
     { label: "Addresses", href: "/addresses" },
-    { label: "Update Profile", href: "/profile" },
+    { label: "Update Profile", href:"/profile" },
   ],
   restaurant: [
     { label: "Overview", href: "/dashboard/restaurant" },

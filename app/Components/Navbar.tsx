@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   Home,
   UtensilsCrossed,
-  ShoppingBag,
   Info,
   Phone,
 } from "lucide-react";
@@ -23,10 +22,12 @@ export default function Navbar() {
   const { data: session, isPending } = authClient.useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const role = (session?.user as { role?: UserRole } | undefined)?.role;
-  const userName = session?.user?.name || "";
+  const user = session?.user;
+  const role = (user as { role?: UserRole })?.role || "customer";
+  const userName = user?.name || "";
   const userInitial = userName ? userName.charAt(0).toUpperCase() : "U";
 
+  // Role অনুসারে Dashboard Link
   const dashboardLink =
     role === "restaurant"
       ? "/dashboard/restaurant"
@@ -37,13 +38,12 @@ export default function Navbar() {
   const handleLogout = async () => {
     await authClient.signOut();
     router.push("/login");
-    router.refresh();
+    router.refresh(); // session refresh
   };
 
   const navLinks = [
     { label: "Home", href: "/", icon: Home },
     { label: "Menu", href: "/menu", icon: UtensilsCrossed },
-
     { label: "About", href: "/about", icon: Info },
     { label: "Contact", href: "/contact", icon: Phone },
   ];
@@ -62,88 +62,91 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Desktop nav links */}
+          {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-3 py-2 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors"
+                className="px-4 py-2 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors"
               >
                 {link.label}
               </Link>
             ))}
           </div>
 
-          {/* Right side */}
+          {/* Right Side - Desktop */}
           <div className="hidden md:flex items-center gap-3">
             {isPending ? (
-              <div className="w-24 h-9 rounded-lg bg-white/5 animate-pulse" />
-            ) : session?.user ? (
-              <>
-                {/* User name + avatar */}
-                <div className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+              <div className="w-28 h-9 rounded-lg bg-white/5 animate-pulse" />
+            ) : user ? (
+              <div className="flex items-center gap-3">
+                {/* User Info */}
+                <div className="flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-lg bg-white/5 border border-white/10">
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-amber-500 flex items-center justify-center text-xs font-semibold text-neutral-950">
                     {userInitial}
                   </div>
-                  <span className="text-sm text-neutral-200 max-w-[120px] truncate">
+                  <span className="text-sm text-neutral-200 truncate max-w-[140px]">
                     {userName}
                   </span>
                 </div>
 
+                {/* Dashboard Button */}
                 <Link
                   href={dashboardLink}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-lg shadow-emerald-900/30"
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition-all"
                 >
                   <LayoutDashboard size={16} />
                   Dashboard
                 </Link>
+
+                {/* Logout */}
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-300 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-neutral-300 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                 >
                   <LogOut size={16} />
                   Logout
                 </button>
-              </>
+              </div>
             ) : (
-              <>
+              <div className="flex items-center gap-3">
                 <Link
                   href="/login"
-                  className="px-4 py-2 rounded-lg text-sm text-neutral-300 hover:text-white transition-colors"
+                  className="px-5 py-2 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors"
                 >
                   Log in
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-amber-500 to-amber-400 text-neutral-950 hover:from-amber-400 hover:to-amber-300 transition-all shadow-lg shadow-amber-900/20"
+                  className="px-5 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-amber-500 to-amber-400 text-neutral-950 hover:from-amber-400 hover:to-amber-300 transition-all"
                 >
                   Register
                 </Link>
-              </>
+              </div>
             )}
           </div>
 
-          {/* Mobile toggle */}
+          {/* Mobile Menu Button */}
           <button
-            onClick={() => setMobileOpen((prev) => !prev)}
-            className="md:hidden text-neutral-300 hover:text-white"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden text-neutral-300 hover:text-white p-2"
           >
             {mobileOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden border-t border-white/10 bg-neutral-950/95 backdrop-blur-xl px-4 py-4 space-y-1">
-          {session?.user && (
-            <div className="flex items-center gap-3 px-3 py-2.5 mb-2 rounded-lg bg-white/5 border border-white/10">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-amber-500 flex items-center justify-center text-sm font-semibold text-neutral-950 shrink-0">
+          {user && (
+            <div className="flex items-center gap-3 px-4 py-3 mb-3 bg-white/5 border border-white/10 rounded-xl">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-amber-500 flex items-center justify-center text-lg font-semibold text-neutral-950">
                 {userInitial}
               </div>
-              <div className="min-w-0">
-                <p className="text-sm text-white font-medium truncate">{userName}</p>
+              <div>
+                <p className="font-medium text-white">{userName}</p>
                 <p className="text-xs text-neutral-500 capitalize">{role}</p>
               </div>
             </div>
@@ -156,50 +159,49 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-neutral-300 hover:bg-white/5 hover:text-white transition-colors"
               >
-                <Icon size={18} />
+                <Icon size={20} />
                 {link.label}
               </Link>
             );
           })}
 
-          <div className="h-px bg-white/10 my-2" />
-
-          {session?.user ? (
+          {user ? (
             <>
               <Link
                 href={dashboardLink}
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-emerald-600/20 text-emerald-400"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-emerald-600/20 text-emerald-400 mt-2"
               >
-                <LayoutDashboard size={18} />
-                Dashboard
+                <LayoutDashboard size={20} />
+                Go to Dashboard
               </Link>
+
               <button
                 onClick={() => {
                   setMobileOpen(false);
                   handleLogout();
                 }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors w-full"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm text-red-400 hover:bg-red-500/10 w-full text-left"
               >
-                <LogOut size={18} />
+                <LogOut size={20} />
                 Logout
               </button>
             </>
           ) : (
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-col gap-2 pt-4">
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
-                className="flex-1 text-center px-4 py-2.5 rounded-lg text-sm text-neutral-300 border border-white/10"
+                className="text-center py-3 rounded-lg border border-white/10 text-neutral-300"
               >
                 Log in
               </Link>
               <Link
                 href="/register"
                 onClick={() => setMobileOpen(false)}
-                className="flex-1 text-center px-4 py-2.5 rounded-lg text-sm font-medium bg-amber-500 text-neutral-950"
+                className="text-center py-3 rounded-lg bg-amber-500 text-neutral-950 font-medium"
               >
                 Register
               </Link>

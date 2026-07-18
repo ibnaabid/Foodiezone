@@ -5,15 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Store, User, Loader2 } from "lucide-react";
 import { authClient } from "../lib/auth-client";
 
-
-type UserRole = "customer" | "restaurant" | "admin";
-
-interface RegisterFormData {
-  name: string;
-  email: string;
-  password: string;
-  role: UserRole;
-}
+type UserRole = "customer" | "restaurant";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -21,11 +13,11 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const [formData, setFormData] = useState<RegisterFormData>({
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    role: "customer",
+    role: "customer" as UserRole,
   });
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -46,27 +38,19 @@ export default function RegisterPage() {
       return;
     }
 
-    // auto sign-in manually trigger
-    await authClient.signIn.email({
-      email: formData.email,
-      password: formData.password,
-    });
-
-    setLoading(false);
-    redirectByRole(formData.role);
+    // Role অনুসারে সরাসরি redirect (তোমার চাওয়া অনুসারে)
+    if (formData.role === "restaurant") {
+      router.push("/dashboard/restaurant");
+    } else {
+      router.push("/dashboard/customer");
+    }
   };
 
   const handleGoogleSignUp = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard/customer",
+      callbackURL: "",
     });
-  };
-
-  const redirectByRole = (role: UserRole) => {
-    if (role === "restaurant") router.push("/dashboard/restaurant");
-    else if (role === "admin") router.push("/dashboard/admin");
-    else router.push("/dashboard/customer");
   };
 
   return (
@@ -77,9 +61,7 @@ export default function RegisterPage() {
       <div className="relative w-full max-w-md">
         <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-semibold text-white">
-              Create an account
-            </h1>
+            <h1 className="text-2xl font-semibold text-white">Create an account</h1>
             <p className="text-neutral-400 text-sm mt-1">
               Join us and start ordering, or manage your restaurant
             </p>
@@ -96,22 +78,18 @@ export default function RegisterPage() {
               type="text"
               placeholder="Full name"
               required
-              className="input w-full bg-white/5 border border-white/10 text-white placeholder:text-neutral-500 focus:border-emerald-500 focus:outline-none rounded-lg px-4 py-3 transition-colors"
+              className="w-full bg-white/5 border border-white/10 text-white placeholder:text-neutral-500 focus:border-emerald-500 focus:outline-none rounded-lg px-4 py-3 transition-colors"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
 
             <input
               type="email"
               placeholder="Email address"
               required
-              className="input w-full bg-white/5 border border-white/10 text-white placeholder:text-neutral-500 focus:border-emerald-500 focus:outline-none rounded-lg px-4 py-3 transition-colors"
+              className="w-full bg-white/5 border border-white/10 text-white placeholder:text-neutral-500 focus:border-emerald-500 focus:outline-none rounded-lg px-4 py-3 transition-colors"
               value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
 
             <div className="relative">
@@ -120,11 +98,9 @@ export default function RegisterPage() {
                 placeholder="Password"
                 required
                 minLength={6}
-                className="input w-full bg-white/5 border border-white/10 text-white placeholder:text-neutral-500 focus:border-emerald-500 focus:outline-none rounded-lg px-4 py-3 pr-11 transition-colors"
+                className="w-full bg-white/5 border border-white/10 text-white placeholder:text-neutral-500 focus:border-emerald-500 focus:outline-none rounded-lg px-4 py-3 pr-11 transition-colors"
                 value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
               <button
                 type="button"
@@ -136,8 +112,8 @@ export default function RegisterPage() {
               </button>
             </div>
 
-            {/* Role selector - card style */}
-            <div className="grid grid-cols-2 gap-3 pt-1">
+            {/* Role Selector */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, role: "customer" })}
