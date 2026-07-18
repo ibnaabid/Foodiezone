@@ -1,174 +1,210 @@
+// components/Navbar.tsx
 "use client";
-
 import { useState } from "react";
 import Link from "next/link";
-import { ShoppingCart, Menu, X, User, LogOut, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  Menu,
+  X,
+  LogOut,
+  LayoutDashboard,
+  Home,
+  UtensilsCrossed,
+  ShoppingBag,
+  Info,
+  Phone,
+} from "lucide-react";
+import { authClient } from "../lib/auth-client";
 
-const colors = {
-  primary: "#D97706",      // Golden Yellow
-  dark: "#451A03",
-  light: "#FEF3C7",
-  accent: "#F59E0B",
-};
+type UserRole = "customer" | "restaurant" | "admin";
 
-export function PremiumNavbar() {
+export default function Navbar() {
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // পরে real auth দিয়ে replace করো
-  const [userRole, setUserRole] = useState<"customer" | "owner">("customer");
-  const [userName, setUserName] = useState("Rahim Khan");
+  const { data: session, isPending } = authClient.useSession();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  const toggleLogin = () => {
-    setIsLoggedIn(!isLoggedIn);
-    if (!isLoggedIn) {
-      setUserRole(Math.random() > 0.5 ? "customer" : "owner");
-    }
+  const role = (session?.user as { role?: UserRole } | undefined)?.role;
+  const userName = session?.user?.name || "";
+  const userInitial = userName ? userName.charAt(0).toUpperCase() : "U";
+
+  const dashboardLink =
+    role === "restaurant"
+      ? "/dashboard/restaurant"
+      : role === "admin"
+      ? "/dashboard/admin"
+      : "/dashboard/customer";
+
+  const handleLogout = async () => {
+    await authClient.signOut();
+    router.push("/login");
+    router.refresh();
   };
 
+  const navLinks = [
+    { label: "Home", href: "/", icon: Home },
+    { label: "Menu", href: "/menu", icon: UtensilsCrossed },
+    { label: "Orders", href: "/orders", icon: ShoppingBag },
+    { label: "About", href: "/about", icon: Info },
+    { label: "Contact", href: "/contact", icon: Phone },
+  ];
+
   return (
-    <nav className="sticky top-0 z-50 border-b" style={{ backgroundColor: colors.dark, borderColor: "rgba(245, 158, 11, 0.2)" }}>
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-between h-20">
+    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-neutral-950/80 border-b border-white/10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center text-4xl shadow-lg">
-              🍔
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-amber-500 flex items-center justify-center">
+              <UtensilsCrossed size={16} className="text-neutral-950" />
             </div>
-            <div>
-              <span className="text-3xl font-bold tracking-tighter text-amber-100">Foodie</span>
-              <span className="text-3xl font-bold tracking-tighter text-orange-400">Zone</span>
-            </div>
+            <span className="text-white font-semibold text-lg tracking-tight">
+              CravingByte
+            </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-amber-100">
-            <Link href="/" className="hover:text-orange-400 transition">Home</Link>
-            <Link href="/restaurants" className="hover:text-orange-400 transition">Restaurants</Link>
-            <Link href="/menu" className="hover:text-orange-400 transition">Menu</Link>
-
-            {isLoggedIn && (
-              <>
-                {userRole === "customer" ? (
-                  <>
-                    <Link href="/dashboard/customer" className="hover:text-orange-400 transition">Dashboard</Link>
-                    <Link href="/my-orders" className="hover:text-orange-400 transition">My Orders</Link>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/dashboard/owner" className="hover:text-orange-400 transition">Owner Dashboard</Link>
-                    <Link href="/my-restaurant" className="hover:text-orange-400 transition">My Restaurant</Link>
-                  </>
-                )}
-              </>
-            )}
-
-            <Link href="/deals" className="hover:text-orange-400 transition">Deals</Link>
-            <Link href="/track" className="hover:text-orange-400 transition">Track Order</Link>
+          {/* Desktop nav links */}
+          <div className="hidden md:flex items-center gap-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="px-3 py-2 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
-          {/* Right Side */}
-          <div className="hidden md:flex items-center gap-5">
-            <a href="tel:+8801XXXXXXXXX" className="flex items-center gap-2 text-amber-100 hover:text-orange-400 transition">
-              <Phone size={18} />
-            </a>
-
-            <button className="relative p-3 text-amber-100 hover:text-orange-400 transition">
-              <ShoppingCart size={24} />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                3
-              </span>
-            </button>
-
-            {isLoggedIn ? (
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold">
-                    {userName.split(" ").map(n => n[0]).join("")}
+          {/* Right side */}
+          <div className="hidden md:flex items-center gap-3">
+            {isPending ? (
+              <div className="w-24 h-9 rounded-lg bg-white/5 animate-pulse" />
+            ) : session?.user ? (
+              <>
+                {/* User name + avatar */}
+                <div className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-amber-500 flex items-center justify-center text-xs font-semibold text-neutral-950">
+                    {userInitial}
                   </div>
-                  <div className="text-sm text-amber-100">
-                    <p>{userName}</p>
-                    <p className="text-xs text-amber-400 capitalize">{userRole}</p>
-                  </div>
+                  <span className="text-sm text-neutral-200 max-w-[120px] truncate">
+                    {userName}
+                  </span>
                 </div>
 
-                <button onClick={toggleLogin} className="text-red-400 hover:text-red-500 transition">
-                  <LogOut size={22} />
+                <Link
+                  href={dashboardLink}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:from-emerald-500 hover:to-emerald-400 transition-all shadow-lg shadow-emerald-900/30"
+                >
+                  <LayoutDashboard size={16} />
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-neutral-300 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut size={16} />
+                  Logout
                 </button>
-              </div>
+              </>
             ) : (
-              <div className="flex items-center gap-3">
+              <>
                 <Link
                   href="/login"
-                  className="px-6 py-2.5 text-sm font-semibold border border-amber-400 text-amber-100 rounded-2xl hover:bg-white/10 transition"
+                  className="px-4 py-2 rounded-lg text-sm text-neutral-300 hover:text-white transition-colors"
                 >
-                  Login
+                  Log in
                 </Link>
                 <Link
                   href="/register"
-                  className="px-6 py-2.5 text-sm font-semibold bg-orange-500 text-white rounded-2xl hover:bg-orange-600 transition"
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-amber-500 to-amber-400 text-neutral-950 hover:from-amber-400 hover:to-amber-300 transition-all shadow-lg shadow-amber-900/20"
                 >
-                  Sign Up
+                  Register
                 </Link>
-              </div>
+              </>
             )}
           </div>
 
-          {/* Mobile Toggle */}
+          {/* Mobile toggle */}
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden text-amber-100 p-2"
+            onClick={() => setMobileOpen((prev) => !prev)}
+            className="md:hidden text-neutral-300 hover:text-white"
           >
-            {menuOpen ? <X size={28} /> : <Menu size={28} />}
+            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="md:hidden bg-[#2C1A0F] border-t border-amber-900">
-          <div className="px-6 py-8 flex flex-col gap-6 text-lg">
-            <Link href="/" onClick={() => setMenuOpen(false)}>Home</Link>
-            <Link href="/restaurants" onClick={() => setMenuOpen(false)}>Restaurants</Link>
-            <Link href="/menu" onClick={() => setMenuOpen(false)}>Menu</Link>
-            <Link href="/deals" onClick={() => setMenuOpen(false)}>Deals</Link>
-            <Link href="/track" onClick={() => setMenuOpen(false)}>Track Order</Link>
-
-            {isLoggedIn && (
-              <>
-                {userRole === "customer" ? (
-                  <>
-                    <Link href="/dashboard/customer" onClick={() => setMenuOpen(false)}>Dashboard</Link>
-                    <Link href="/my-orders" onClick={() => setMenuOpen(false)}>My Orders</Link>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/dashboard/owner" onClick={() => setMenuOpen(false)}>Owner Dashboard</Link>
-                  </>
-                )}
-              </>
-            )}
-
-            <div className="pt-6 border-t border-amber-900">
-              {isLoggedIn ? (
-                <button
-                  onClick={toggleLogin}
-                  className="w-full py-4 bg-red-900/50 text-red-400 rounded-2xl font-medium"
-                >
-                  Logout
-                </button>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <Link href="/login" className="py-4 text-center border border-amber-400 rounded-2xl" onClick={() => setMenuOpen(false)}>
-                    Login
-                  </Link>
-                  <Link href="/register" className="py-4 text-center bg-orange-500 text-white rounded-2xl" onClick={() => setMenuOpen(false)}>
-                    Sign Up
-                  </Link>
-                </div>
-              )}
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-white/10 bg-neutral-950/95 backdrop-blur-xl px-4 py-4 space-y-1">
+          {session?.user && (
+            <div className="flex items-center gap-3 px-3 py-2.5 mb-2 rounded-lg bg-white/5 border border-white/10">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-amber-500 flex items-center justify-center text-sm font-semibold text-neutral-950 shrink-0">
+                {userInitial}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm text-white font-medium truncate">{userName}</p>
+                <p className="text-xs text-neutral-500 capitalize">{role}</p>
+              </div>
             </div>
-          </div>
+          )}
+
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors"
+              >
+                <Icon size={18} />
+                {link.label}
+              </Link>
+            );
+          })}
+
+          <div className="h-px bg-white/10 my-2" />
+
+          {session?.user ? (
+            <>
+              <Link
+                href={dashboardLink}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-emerald-600/20 text-emerald-400"
+              >
+                <LayoutDashboard size={18} />
+                Dashboard
+              </Link>
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  handleLogout();
+                }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors w-full"
+              >
+                <LogOut size={18} />
+                Logout
+              </button>
+            </>
+          ) : (
+            <div className="flex gap-2 pt-1">
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="flex-1 text-center px-4 py-2.5 rounded-lg text-sm text-neutral-300 border border-white/10"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/register"
+                onClick={() => setMobileOpen(false)}
+                className="flex-1 text-center px-4 py-2.5 rounded-lg text-sm font-medium bg-amber-500 text-neutral-950"
+              >
+                Register
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </nav>
