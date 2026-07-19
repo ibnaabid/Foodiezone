@@ -44,7 +44,7 @@ export default function CTA() {
               {/* View Menu Button */}
               <Button 
                 size="lg" 
-                variant="bordered"
+              
                 className="text-white border-white hover:bg-white/10 font-bold px-10"
               >
                 View Menu
