@@ -1,34 +1,92 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
-import { Accordion, AccordionItem } from "@heroui/react";
+import { useState } from "react";
+import { ChevronDown, HelpCircle } from "lucide-react";
 
 const faqs = [
-  { id: "1", q: "What are your delivery hours?", a: "আমরা প্রতিদিন সকাল ১০টা থেকে রাত ১১টা পর্যন্ত ডেলিভারি দিয়ে থাকি।" },
-  { id: "2", q: "Do you offer vegetarian options?", a: "হ্যাঁ, আমাদের মেনুতে অনেক ধরনের নিরামিষ এবং স্বাস্থ্যকর খাবারের অপশন রয়েছে।" },
-  { id: "3", q: "Is there any minimum order amount for free delivery?", a: "হ্যাঁ, ৫০০ টাকার বেশি অর্ডার করলে ডেলিভারি সম্পূর্ণ ফ্রি।" },
-  { id: "4", q: "Can I cancel my order after placing it?", a: "অর্ডার কনফার্ম হওয়ার ৫ মিনিটের মধ্যে আপনি কাস্টমার সাপোর্টে কল করে অর্ডার বাতিল করতে পারবেন।" },
+  {
+    question: "How do I place an order?",
+    answer:
+      "Browse the menu, choose your favorite food, add it to the cart, and complete checkout.",
+  },
+  {
+    question: "How long does delivery take?",
+    answer:
+      "Most orders are delivered within 30 to 45 minutes depending on your location.",
+  },
+  {
+    question: "Can I cancel my order?",
+    answer:
+      "Yes. You can cancel your order before the restaurant starts preparing it.",
+  },
+  {
+    question: "Which payment methods are available?",
+    answer:
+      "We accept Cash on Delivery, Cards, bKash, Nagad, and Rocket.",
+  },
+  {
+    question: "How can I contact support?",
+    answer:
+      "Open the Help Center or use the live chat inside the application.",
+  },
 ];
 
-export default function FAQ() {
+export default function FAQSection() {
+  const [open, setOpen] = useState<number | null>(0);
+
   return (
-    <section className="py-24 bg-gray-50">
-      <div className="max-w-4xl mx-auto px-6 lg:px-8">
+    <section className="bg-neutral-950 py-20 px-5">
+      <div className="max-w-4xl mx-auto">
+        {/* Heading */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Frequently Asked <span className="text-orange-600">Questions</span></h2>
-          <p className="text-gray-600">আপনার মনে থাকা সাধারণ কিছু প্রশ্নের উত্তর এখানে দেওয়া হলো।</p>
+          <div className="flex justify-center mb-4">
+            <div className="bg-emerald-600 p-4 rounded-full">
+              <HelpCircle className="text-white" size={30} />
+            </div>
+          </div>
+
+          <h2 className="text-4xl font-bold text-white">
+            Frequently Asked Questions
+          </h2>
+
+          <p className="text-gray-400 mt-4">
+            Find answers to the most common questions about CravingByte.
+          </p>
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <Accordion variant="splitted" className="gap-4">
-            {faqs.map((faq) => (
-              <AccordionItem key={faq.id} aria-label={faq.q} title={<span className="font-bold text-gray-800">{faq.q}</span>} className="bg-white shadow-sm">
-                <p className="text-gray-600 pb-2">{faq.a}</p>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </motion.div>
+        {/* FAQ */}
+        <div className="space-y-4">
+          {faqs.map((faq, index) => (
+            <div
+              key={index}
+              className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden"
+            >
+              <button
+                onClick={() =>
+                  setOpen(open === index ? null : index)
+                }
+                className="w-full flex justify-between items-center p-5 text-left"
+              >
+                <span className="text-white font-semibold">
+                  {faq.question}
+                </span>
+
+                <ChevronDown
+                  size={22}
+                  className={`text-emerald-500 transition-transform ${
+                    open === index ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {open === index && (
+                <div className="px-5 pb-5 text-gray-400">
+                  {faq.answer}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
