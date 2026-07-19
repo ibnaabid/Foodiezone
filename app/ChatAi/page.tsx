@@ -10,11 +10,12 @@ interface Message {
 }
 
 export default function ChatWidget() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const userRole = (session?.user as any)?.role as "customer" | "restaurant" | undefined;
@@ -23,18 +24,16 @@ export default function ChatWidget() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  const getWelcomeMessage = () => {
-    if (userRole === "restaurant") {
-      return "👋 Hello! How can I help with your restaurant today?";
-    }
-    return "👋 Hi! Ask me about menu, orders, or anything.";
-  };
+  const getWelcomeMessage = () =>
+    userRole === "restaurant"
+      ? "👋 Hello! How can I help with your restaurant today?"
+      : "👋 Hi! Ask me about menu, orders, or anything.";
 
   const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || streaming) return;
 
     if (!session?.user) {
-      setMessages(prev => [...prev, 
+      setMessages(prev => [...prev,
         { role: "user", content: input },
         { role: "assistant", content: "Please log in first." }
       ]);
@@ -47,9 +46,13 @@ export default function ChatWidget() {
     setInput("");
     setLoading(true);
 
+    // assistant এর জন্য placeholder bubble, stream আসার সাথে সাথে এটাই fill হবে
+    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+
     try {
       const res = await fetch("https://foodie-zone-backend.vercel.app/chat", {
         method: "POST",
+        credentials: "include", // ⚠️ Better Auth cookie পাঠানোর জন্য জরুরি, আগে missing ছিল
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: session.user.id,
@@ -58,20 +61,58 @@ export default function ChatWidget() {
         }),
       });
 
-      const data = await res.json();
+      if (!res.body) throw new Error("No stream body");
 
-      setMessages(prev => [...prev, { 
-        role: "assistant", 
-        content: data.reply || data.error || "Sorry, I couldn't respond." 
-      }]);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
 
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
+
+        for (const part of parts) {
+          if (!part.startsWith("data: ")) continue;
+          const payload = JSON.parse(part.slice(6));
+
+          if (payload.token) {
+            setLoading(false);
+            setStreaming(true);
+            setMessages(prev => {
+              const updated = [...prev];
+              updated[updated.length - 1] = {
+                role: "assistant",
+                content: updated[updated.length - 1].content + payload.token,
+              };
+              return updated;
+            });
+          }
+
+          if (payload.error) {
+            setMessages(prev => {
+              const updated = [...prev];
+              updated[updated.length - 1] = { role: "assistant", content: payload.error };
+              return updated;
+            });
+          }
+        }
+      }
     } catch (err) {
-      setMessages(prev => [...prev, { 
-        role: "assistant", 
-        content: "Connection error. Please try again." 
-      }]);
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: "Connection error. Please try again.",
+        };
+        return updated;
+      });
     } finally {
       setLoading(false);
+      setStreaming(false);
     }
   };
 
@@ -88,7 +129,6 @@ export default function ChatWidget() {
 
       {isOpen && (
         <div className="fixed bottom-6 right-6 z-50 w-[92vw] max-w-md h-[620px] flex flex-col bg-neutral-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
-          {/* Header */}
           <div className="h-14 border-b border-white/10 bg-white/5 flex items-center justify-between px-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-amber-500 flex items-center justify-center">
@@ -104,7 +144,6 @@ export default function ChatWidget() {
             </button>
           </div>
 
-          {/* Messages */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
             {!session?.user && (
               <div className="text-center py-12">
@@ -117,42 +156,49 @@ export default function ChatWidget() {
             )}
 
             {session?.user && messages.length === 0 && (
-              <div className="text-center text-neutral-400 py-8">
-                {getWelcomeMessage()}
-              </div>
+              <div className="text-center text-neutral-400 py-8">{getWelcomeMessage()}</div>
             )}
 
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm ${
-                  msg.role === "user" 
-                    ? "bg-emerald-600 text-white" 
+                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap ${
+                  msg.role === "user"
+                    ? "bg-emerald-600 text-white"
                     : "bg-white/5 border border-white/10 text-neutral-200"
                 }`}>
                   {msg.content}
                 </div>
               </div>
             ))}
+
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl flex gap-1">
+                  <span className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Input */}
           <div className="p-4 border-t border-white/10 bg-neutral-950/80">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 placeholder={userRole === "restaurant" ? "Ask about orders..." : "Ask about menu..."}
-                disabled={loading}
+                disabled={loading || streaming}
                 className="flex-1 bg-neutral-800 border border-white/10 rounded-2xl px-4 py-3 text-sm focus:border-emerald-500 outline-none"
               />
               <button
                 onClick={sendMessage}
-                disabled={loading || !input.trim()}
+                disabled={loading || streaming || !input.trim()}
                 className="w-11 h-11 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-2xl flex items-center justify-center"
               >
-                {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                {loading || streaming ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               </button>
             </div>
           </div>
