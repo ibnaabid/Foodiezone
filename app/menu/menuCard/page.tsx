@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
 import { ShoppingBag, Tag, CircleCheck, CircleX } from "lucide-react";
 import Image from "next/image";
@@ -17,13 +18,16 @@ interface Product {
 }
 
 interface MenuCardProps {
-  product: Product;
+  product: Product | undefined; // এখানে undefined হতে পারে তা ডিফাইন করে দিন
 }
 
 const fallbackImage =
   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop";
 
 export default function MenuCard({ product }: MenuCardProps) {
+  // যদি product না থাকে, তবে কিছুই রেন্ডার হবে না (এরর দিবে না)
+  if (!product) return null;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -32,25 +36,25 @@ export default function MenuCard({ product }: MenuCardProps) {
       transition={{ duration: 0.35 }}
       className="group backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 hover:-translate-y-1 transition-all flex flex-col h-full"
     >
-      {/* ইমেজ সেকশন */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-emerald-500/10 to-amber-500/10">
         <Image
-         height={900}
-         width={900}
-          src={product.image && !product.image.startsWith("blob:") ? product.image : fallbackImage}
-          alt={product.name}
+          height={900}
+          width={900}
+          // ইমেজ ইউআরএল চেক নিরাপদ করা হয়েছে
+          src={product?.image && !product.image.startsWith("blob:") ? product.image : fallbackImage}
+          alt={product?.name || "Menu Item"}
           className="object-cover object-center transform group-hover:scale-105 transition-transform duration-500"
           unoptimized
         />
 
         <div className="absolute top-3 left-3 z-10">
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-md bg-neutral-950/80 backdrop-blur-sm text-amber-400 border border-amber-500/20">
-            <Tag size={11} /> {product.category || "Dish"}
+            <Tag size={11} /> {product?.category || "Dish"}
           </span>
         </div>
 
         <div className="absolute bottom-3 left-3 z-10">
-          {product.available ? (
+          {product?.available ? (
             <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-md bg-emerald-500/15 backdrop-blur-sm text-emerald-400 border border-emerald-500/20">
               <CircleCheck size={11} /> Available
             </span>
@@ -62,40 +66,38 @@ export default function MenuCard({ product }: MenuCardProps) {
         </div>
       </div>
 
-      {/* কন্টেন্ট সেকশন */}
       <div className="p-5 flex flex-col flex-grow">
         <h3 className="text-base font-semibold text-white mb-1 group-hover:text-emerald-400 transition-colors line-clamp-1">
-          {product.name}
+          {product?.name || "Untitled Dish"}
         </h3>
         <p className="text-xs text-neutral-500 line-clamp-2 mb-4 leading-relaxed flex-grow">
-          {product.description || "No description available."}
+          {product?.description || "No description available."}
         </p>
 
-        {/* প্রাইস এবং অ্যাকশন বাটন সেকশন */}
         <div className="pt-3.5 flex items-center justify-between border-t border-white/5 mt-auto">
           <div>
             <span className="text-[10px] text-neutral-500 block uppercase tracking-wider font-medium">
               Price
             </span>
             <span className="text-lg font-bold text-white">
-              ৳{product.price ? product.price.toLocaleString("en-BD") : "0"}
+              ৳{product?.price ? product.price.toLocaleString("en-BD") : "0"}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <FavouriteButton product={product} />
-            <Link href={`/menu/${product?._id}`} passHref>
+            <Link href={`/menu/${product?._id || ""}`} passHref>
               <motion.span
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.96 }}
                 className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-                  product.available
+                  product?.available
                     ? "bg-emerald-600 hover:bg-emerald-500 text-white"
                     : "bg-white/5 text-neutral-500 cursor-not-allowed pointer-events-none"
                 }`}
               >
                 <ShoppingBag size={13} />
-                {product.available ? "Order" : "Unavailable"}
+                {product?.available ? "Order" : "Unavailable"}
               </motion.span>
             </Link>
           </div>
