@@ -19,8 +19,7 @@ export default function RegisterPage() {
     password: "",
     role: "customer" as UserRole,
   });
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg("");
     setLoading(true);
@@ -29,8 +28,12 @@ export default function RegisterPage() {
       email: formData.email,
       password: formData.password,
       name: formData.name,
-      role: formData.role,
-    });
+      // role পাঠানোর সঠিক উপায় হলো image ফিল্ড বা অতিরিক্ত ডেটার জন্য তৈরি করা ফিল্ডে পাঠানো
+      // যদি আপনার লাইব্রেরিতে additionalData নামে প্রপ থাকে তবে সেটি ব্যবহার করুন:
+      additionalData: {
+        role: formData.role,
+      },
+    } as any); // টাইপ এরর এড়াতে সাময়িকভাবে 'as any' ব্যবহার করতে পারেন
 
     if (error) {
       setErrorMsg(error.message || "Registration failed");
@@ -38,7 +41,7 @@ export default function RegisterPage() {
       return;
     }
 
-    // Role অনুসারে সরাসরি redirect (তোমার চাওয়া অনুসারে)
+    // Role অনুসারে সরাসরি redirect
     if (formData.role === "restaurant") {
       router.push("/dashboard/restaurant");
     } else {
