@@ -1,10 +1,10 @@
-// components/DashboardSidebar.tsx
 "use client";
+
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  ShoppingBag,
   Heart,
   MapPin,
   UtensilsCrossed,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 interface SidebarProps {
-  role: "customer" | "restaurant";
+  role: "customer" | "restaurant" | undefined;
 }
 
 const menuByRole = {
@@ -27,16 +27,19 @@ const menuByRole = {
   ],
   restaurant: [
     { label: "Overview", href: "/dashboard/restaurant", icon: LayoutDashboard },
-    { label: "Manage_Menu", href: "/dashboard/restaurant/Manage-Menu", icon: ClipboardList },
-    { label: "Add_Menu", href: "/dashboard/restaurant/Add-menu", icon: UtensilsCrossed },
-    { label: "privacy", href: "/dashboard/restaurant/privacy", icon: TrendingUp },
+    { label: "Manage Menu", href: "/dashboard/restaurant/Manage-Menu", icon: ClipboardList },
+    { label: "Add Menu", href: "/dashboard/restaurant/Add-menu", icon: UtensilsCrossed },
+    { label: "Privacy", href: "/dashboard/restaurant/privacy", icon: TrendingUp },
     { label: "Settings", href: "/dashboard/restaurant/settings", icon: Settings },
   ],
 };
 
 export default function DashboardSidebar({ role }: SidebarProps) {
   const pathname = usePathname();
-  const links = menuByRole[role];
+  
+  // সেফটি চেক: যদি role না থাকে বা ভুল হয়, তবে খালি অ্যারে ব্যবহার করবে
+  // এতে .map() ফাংশনটি আর কখনও ক্র্যাশ করবে না
+  const links = role && menuByRole[role] ? menuByRole[role] : [];
   const accent = role === "restaurant" ? "amber" : "emerald";
 
   return (
@@ -56,7 +59,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
               : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
           }`}
         >
-          {role === "restaurant" ? "Restaurant owner" : "Customer"}
+          {role === "restaurant" ? "Restaurant Owner" : role === "customer" ? "Customer" : "Loading..."}
         </span>
       </div>
 
