@@ -8,7 +8,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { authClient } from "@/app/lib/auth-client";
-// import { authClient } from "../../lib/auth-client";
 
 const colors = {
   bgPremiumDark: "#0D1B12",
@@ -21,8 +20,8 @@ const colors = {
 interface SessionUser {
   name?: string;
   email?: string;
-  image?: string | null;     // ← Fixed: Allow null
-  role?: string;
+  image?: string | null;
+  role?: string | null; // ← null allow করা হলো, Better Auth session থেকে null আসতে পারে
 }
 
 export default function DashboardGreetings() {
