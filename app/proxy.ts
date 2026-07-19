@@ -1,24 +1,19 @@
-// proxy.ts
+// middleware.ts  (root এ, app/ folder এর বাইরে)
 import { NextRequest, NextResponse } from "next/server";
+import { getSessionCookie, getCookieCache } from "better-auth/cookies";
 
-import { getSessionCookie } from "better-auth/cookies";
-import { auth } from "./lib/auth";
-
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Public routes - শুধু লগইন না করা ইউজারদের জন্য
   if (pathname.startsWith("/login") || pathname.startsWith("/register")) {
     const sessionCookie = getSessionCookie(request);
-    
+
     if (sessionCookie) {
-      // ইতিমধ্যে লগইন করা আছে → ড্যাশবোর্ডে পাঠাও
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();
   }
 
-  // Protected routes
   if (pathname.startsWith("/dashboard")) {
     const sessionCookie = getSessionCookie(request);
 
@@ -27,17 +22,15 @@ export async function proxy(request: NextRequest) {
     }
 
     try {
-      const session = await auth.api.getSession({
-        headers: request.headers,
-      });
+      // DB hit ছাড়াই cached session data পড়ে (Edge-safe)
+      const cached = await getCookieCache(request);
 
-      if (!session?.user) {
+      if (!cached?.user) {
         return NextResponse.redirect(new URL("/login", request.url));
       }
 
-      const role = session.user.role as string;
+      const role = (cached.user as any).role as string;
 
-      // Role based redirect from /dashboard
       if (pathname === "/dashboard" || pathname === "/dashboard/") {
         if (role === "restaurant") {
           return NextResponse.redirect(new URL("/dashboard/restaurant", request.url));
@@ -45,10 +38,9 @@ export async function proxy(request: NextRequest) {
         if (role === "admin") {
           return NextResponse.redirect(new URL("/dashboard/admin", request.url));
         }
-        return NextResponse.next(); // customer
+        return NextResponse.next();
       }
 
-      // Strict protection
       if (pathname.startsWith("/dashboard/admin") && role !== "admin") {
         return NextResponse.redirect(new URL("/dashboard/customer", request.url));
       }
@@ -58,9 +50,8 @@ export async function proxy(request: NextRequest) {
       }
 
       return NextResponse.next();
-
     } catch (err) {
-      console.error("Proxy error:", err);
+      console.error("Middleware error:", err);
       return NextResponse.redirect(new URL("/login", request.url));
     }
   }

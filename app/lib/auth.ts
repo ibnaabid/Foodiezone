@@ -28,8 +28,9 @@ export const auth = betterAuth({
     additionalFields: {
       role: {
         type: "string",
+        required: false,
         defaultValue: "customer",
-        required: true,
+        input: true, // signup form থেকে client এই field সেট করতে পারবে
       },
     },
   },

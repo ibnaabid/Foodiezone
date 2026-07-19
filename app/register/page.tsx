@@ -1,4 +1,3 @@
-// app/register/page.tsx
 "use client";
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -19,7 +18,8 @@ export default function RegisterPage() {
     password: "",
     role: "customer" as UserRole,
   });
-const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg("");
     setLoading(true);
@@ -28,12 +28,8 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
       email: formData.email,
       password: formData.password,
       name: formData.name,
-      // role পাঠানোর সঠিক উপায় হলো image ফিল্ড বা অতিরিক্ত ডেটার জন্য তৈরি করা ফিল্ডে পাঠানো
-      // যদি আপনার লাইব্রেরিতে additionalData নামে প্রপ থাকে তবে সেটি ব্যবহার করুন:
-      additionalData: {
-        role: formData.role,
-      },
-    } as any); // টাইপ এরর এড়াতে সাময়িকভাবে 'as any' ব্যবহার করতে পারেন
+      role: formData.role, // top-level এ সরাসরি — additionalFields এ input:true থাকায় এখন কাজ করবে
+    });
 
     if (error) {
       setErrorMsg(error.message || "Registration failed");
@@ -41,18 +37,13 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
       return;
     }
 
-    // Role অনুসারে সরাসরি redirect
-    if (formData.role === "restaurant") {
-      router.push("/dashboard/restaurant");
-    } else {
-      router.push("/dashboard/customer");
-    }
+    router.push(formData.role === "restaurant" ? "/dashboard/restaurant" : "/dashboard/customer");
   };
 
   const handleGoogleSignUp = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "",
+      callbackURL: "/onboarding", // Google login শেষে role select page এ পাঠাবে
     });
   };
 
@@ -115,7 +106,6 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
               </button>
             </div>
 
-            {/* Role Selector */}
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button
                 type="button"
