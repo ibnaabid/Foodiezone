@@ -51,6 +51,7 @@ interface MenuFormData {
 export default function AddMenuItemPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -64,13 +65,45 @@ export default function AddMenuItemPage() {
     available: true,
   });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ✅ Real upload — ImgBB e pathiye actual hosted URL nite hobe
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const objectUrl = URL.createObjectURL(file);
-    setImagePreview(objectUrl);
-    setFormData((prev) => ({ ...prev, image: objectUrl }));
+    // shudhu local preview er jonno (blob URL) — form e save hobe na
+    const localPreview = URL.createObjectURL(file);
+    setImagePreview(localPreview);
+    setUploadingImage(true);
+    setErrorMsg("");
+
+    try {
+      const imgFormData = new FormData();
+      imgFormData.append("image", file);
+
+      const res = await fetch(
+        `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_API_KEY}`,
+        {
+          method: "POST",
+          body: imgFormData,
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        // ✅ real hosted URL — eita e MongoDB te save hobe
+        setFormData((prev) => ({ ...prev, image: data.data.url }));
+      } else {
+        setErrorMsg("Image upload failed. Please try again.");
+        setImagePreview(null);
+      }
+    } catch (err) {
+      console.error("Image upload error:", err);
+      setErrorMsg("Image upload failed. Please try again.");
+      setImagePreview(null);
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -79,6 +112,11 @@ export default function AddMenuItemPage() {
 
     if (!formData.name || !formData.price || !formData.category) {
       setErrorMsg("Please fill in name, price, and category");
+      return;
+    }
+
+    if (uploadingImage) {
+      setErrorMsg("Please wait for the image to finish uploading");
       return;
     }
 
@@ -106,7 +144,6 @@ export default function AddMenuItemPage() {
       setSuccess(true);
       setLoading(false);
 
-      // page redirect na kore, ei page e thakbe — form reset + data refresh
       setTimeout(() => {
         setSuccess(false);
         setFormData({
@@ -118,7 +155,7 @@ export default function AddMenuItemPage() {
           available: true,
         });
         setImagePreview(null);
-        router.refresh(); // shudhu cached data revalidate hobe, page change hobe na
+        router.refresh();
       }, 2000);
     } catch (err) {
       setErrorMsg("Network error — please try again");
@@ -171,7 +208,12 @@ export default function AddMenuItemPage() {
                 htmlFor="image-upload"
                 className="flex items-center justify-center gap-3 h-40 rounded-xl border-2 border-dashed border-white/15 hover:border-emerald-500/40 bg-white/[0.02] cursor-pointer transition-colors overflow-hidden relative"
               >
-                {imagePreview ? (
+                {uploadingImage ? (
+                  <div className="flex flex-col items-center gap-2 text-neutral-400">
+                    <Loader2 size={24} className="animate-spin text-emerald-400" />
+                    <span className="text-sm">Uploading...</span>
+                  </div>
+                ) : imagePreview ? (
                   <Image
                     height={300}
                     width={300}
@@ -192,8 +234,12 @@ export default function AddMenuItemPage() {
                   accept="image/*"
                   className="hidden"
                   onChange={handleImageChange}
+                  disabled={uploadingImage}
                 />
               </label>
+              {formData.image && !uploadingImage && (
+                <p className="text-xs text-emerald-400 mt-1.5">✓ Image uploaded successfully</p>
+              )}
             </div>
 
             <div>
@@ -297,7 +343,7 @@ export default function AddMenuItemPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploadingImage}
               className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 rounded-3xl disabled:opacity-60 text-white font-medium py-3.5 transition-colors"
             >
               {loading && <Loader2 size={18} className="animate-spin" />}

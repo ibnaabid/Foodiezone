@@ -35,8 +35,8 @@ export default function MenuCard({ product }: MenuCardProps) {
       {/* ইমেজ সেকশন */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-emerald-500/10 to-amber-500/10">
         <Image
-         height={600}
-         width={600}
+         height={900}
+         width={900}
           src={product.image && !product.image.startsWith("blob:") ? product.image : fallbackImage}
           alt={product.name}
           className="object-cover object-center transform group-hover:scale-105 transition-transform duration-500"
