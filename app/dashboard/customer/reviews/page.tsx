@@ -31,7 +31,7 @@ export default function ReviewForm() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch("http://localhost:5000/reviews", {
+      const res = await fetch("https://foodie-zone-backend.vercel.app/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

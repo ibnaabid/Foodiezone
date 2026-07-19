@@ -43,7 +43,7 @@ export default function MenuPage() {
   useEffect(() => {
     const getProducts = async () => {
       try {
-        const res = await fetch("http://localhost:5000/menu", {
+        const res = await fetch("https://foodie-zone-backend.vercel.app/menu", {
           cache: "no-store",
         });
 

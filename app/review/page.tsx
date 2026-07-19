@@ -16,7 +16,7 @@ const Page = async () => {
   let fetchError = false;
 
   try {
-    const res = await fetch("http://localhost:5000/reviews", {
+    const res = await fetch("https://foodie-zone-backend.vercel.app/reviews", {
       cache: "no-store",
     });
 

@@ -44,7 +44,7 @@ export default function FavouriteButton({ product }: Props) {
     console.log(favourite);
 
     try {
-      const res = await fetch("http://localhost:5000/favorite", {
+      const res = await fetch("https://foodie-zone-backend.vercel.app/favorite", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

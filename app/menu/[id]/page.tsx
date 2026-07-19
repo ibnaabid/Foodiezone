@@ -37,7 +37,7 @@ const Page = async ({ params }: PageProps) => {
   let fetchError = false;
 
   try {
-    const res = await fetch(`http://localhost:5000/menu/${id}`, {
+    const res = await fetch(`https://foodie-zone-backend.vercel.app/menu/${id}`, {
       cache: "no-store",
     });
 

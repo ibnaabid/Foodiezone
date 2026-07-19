@@ -19,7 +19,7 @@ const Page = async () => {
   let fetchError = false;
 
   try {
-    const res = await fetch("http://localhost:5000/favorite", {
+    const res = await fetch("https://foodie-zone-backend.vercel.app/favorite", {
       cache: "no-store",
     });
 

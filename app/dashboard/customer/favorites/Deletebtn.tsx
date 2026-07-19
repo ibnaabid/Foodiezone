@@ -24,7 +24,7 @@ export default function DeleteFavoriteBtn({ item, full }: DeleteFavoriteBtnProps
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const res = await fetch(`http://localhost:5000/favorite/${item._id}`, {
+      const res = await fetch(`https://foodie-zone-backend.vercel.app/favorite/${item._id}`, {
         method: "DELETE",
       });
 

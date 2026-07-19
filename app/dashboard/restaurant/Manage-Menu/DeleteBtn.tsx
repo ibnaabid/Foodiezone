@@ -23,7 +23,7 @@ export default function DeleteProductDialog({ product }: DeleteProductDialogProp
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const res = await fetch(`http://localhost:5000/menu/${product._id}`, {
+      const res = await fetch(`https://foodie-zone-backend.vercel.app/menu/${product._id}`, {
         method: "DELETE",
       });
 

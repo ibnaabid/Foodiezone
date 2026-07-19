@@ -123,7 +123,7 @@ export default function AddMenuItemPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/menu", {
+      const res = await fetch("https://foodie-zone-backend.vercel.app/menu", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
