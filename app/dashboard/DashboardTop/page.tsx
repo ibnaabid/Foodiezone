@@ -16,9 +16,9 @@ const menuByRole = {
   customer: [
     { label: "Overview", href: "/dashboard/customer" },
  
-    { label: "Favorites", href: "/favorites" },
-    { label: "Addresses", href: "/addresses" },
-    { label: "Update Profile", href:"/profile" },
+    { label: "Favorites", href: "/dashboard/customer/favorites" },
+    { label: "Addresses", href: "/dashboard/customer/addresses" },
+    { label: "Reviews", href:"/dashboard/customer/reviews" },
   ],
   restaurant: [
     { label: "Overview", href: "/dashboard/restaurant" },

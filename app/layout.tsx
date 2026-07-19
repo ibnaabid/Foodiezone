@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar, { PremiumNavbar } from "./Components/Navbar";
 import ChatWidget from "./ChatAi/page";
+import { Toaster } from "react-hot-toast";
 // import { PremiumNavbar } from "./Components/Navbar";
 
 const geistSans = Geist({
@@ -45,6 +46,7 @@ export default function RootLayout({
           <main className="flex-1">
             {children}
             <ChatWidget />
+            <Toaster/>
           </main>
         </div>
       </body>

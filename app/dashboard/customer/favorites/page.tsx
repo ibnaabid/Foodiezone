@@ -1,208 +1,208 @@
-"use client";
-import { useEffect, useState } from "react";
+// app/favorites/page.tsx
 import Image from "next/image";
-import { Trash2, Heart, UtensilsCrossed } from "lucide-react";
-import toast from "react-hot-toast";
-import { authClient } from "@/app/lib/auth-client";
+import Link from "next/link";
+import { Heart, AlertTriangle, UtensilsCrossed, Tag, ShoppingBag } from "lucide-react";
+import DeleteFavoriteBtn from "./Deletebtn";
+// import DeleteFavoriteBtn from "./DeleteFavoriteBtn";
 
-interface FavoriteItem {
+type FavoriteItem = {
   _id: string;
-  name: string;
-  price: number;
-  image?: string;
-  restaurantName: string;
+  name?: string;
+  productName?: string;
+  price?: number;
   category?: string;
-}
+  image?: string;
+};
 
-export default function FavoritesPage() {
-  const [items, setItems] = useState<FavoriteItem[]>([]);
-  const [loading, setLoading] = useState(true);
+const Page = async () => {
+  let items: FavoriteItem[] = [];
+  let fetchError = false;
 
-  const loadFavorites = async () => {
-    try {
-     
+  try {
+    const res = await fetch("http://localhost:5000/favorite", {
+      cache: "no-store",
+    });
 
-      const res = await fetch("http://localhost:5000/favorite", {
-      
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setItems(data.favorites || []);
-      } else {
-        toast.error(data.message || "Failed to load favorites");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load favourites");
-    } finally {
-      setLoading(false);
+    if (!res.ok) {
+      fetchError = true;
+    } else {
+      items = await res.json();
     }
-  };
+  } catch (error) {
+    fetchError = true;
+  }
 
-  useEffect(() => {
-    loadFavorites();
-  }, []);
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Remove this item from favourites?")) return;
-
-    try {
-
-      const res = await fetch(`http://localhost:5000/favorite/${id}`, {
-        method: "DELETE",
-       
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        toast.success("Removed from favourites ❤️");
-        setItems((prev) => prev.filter((item) => item._id !== id));
-      } else {
-        toast.error("Failed to remove");
-      }
-    } catch (error) {
-      toast.error("Something went wrong");
-      console.error(error);
-    }
-  };
-
-  if (loading) {
+  if (fetchError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-950">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-emerald-500"></div>
-          <p className="text-neutral-400">Loading your favourites...</p>
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center px-4">
+        <div className="backdrop-blur-xl bg-white/5 border border-red-500/20 rounded-2xl p-10 text-center max-w-md">
+          <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-7 h-7 text-red-400" />
+          </div>
+          <h3 className="text-white font-semibold">Couldn&apos;t load favorites</h3>
+          <p className="text-neutral-500 text-sm mt-1">
+            Make sure the backend server is running on port 5000, then refresh.
+          </p>
         </div>
       </div>
     );
   }
 
+  const total = items.length;
+
   return (
-    <div className="min-h-screen bg-neutral-950 pb-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-red-500/10 rounded-2xl">
-              <Heart className="w-9 h-9 text-red-500" fill="currentColor" />
+    <div className="min-h-screen bg-neutral-950 relative overflow-hidden">
+      <div className="absolute -top-40 -right-40 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl" />
+      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-emerald-900/10 rounded-full blur-3xl" />
+
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center">
+              <Heart size={20} className="text-neutral-950" fill="currentColor" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white tracking-tight">
-                My Favourites
-              </h1>
-              <p className="text-neutral-400 mt-1">
-                {items.length} {items.length === 1 ? "item" : "items"} saved
+              <h1 className="text-2xl sm:text-3xl font-semibold text-white">Your Favorites</h1>
+              <p className="text-neutral-400 text-sm mt-0.5">
+                {total} dish{total !== 1 ? "es" : ""} you&apos;ve saved
               </p>
             </div>
           </div>
+          <Link
+            href="/menu"
+            className="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors w-fit"
+          >
+            <ShoppingBag className="w-4 h-4" /> Browse menu
+          </Link>
         </div>
 
-        {/* Empty State */}
-        {items.length === 0 && (
-          <div className="bg-neutral-900 rounded-3xl py-20 px-6 text-center border border-white/10">
-            <UtensilsCrossed className="w-20 h-20 mx-auto text-neutral-600 mb-6" />
-            <h3 className="text-3xl font-semibold text-white mb-3">No favourites yet</h3>
-            <p className="text-neutral-400 max-w-md mx-auto">
-              The dishes you love will appear here. Start exploring and save your favourites!
+        {total === 0 && (
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl py-20 text-center">
+            <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Heart className="w-8 h-8 text-rose-400" />
+            </div>
+            <h3 className="text-white font-semibold">No favorites yet</h3>
+            <p className="text-neutral-500 text-sm mt-1 mb-5">
+              Save dishes you love and find them here anytime.
             </p>
+            <Link
+              href="/menu"
+              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
+            >
+              <ShoppingBag className="w-4 h-4" /> Explore the menu
+            </Link>
           </div>
         )}
 
-        {/* Desktop Table */}
-        {items.length > 0 && (
-          <div className="hidden md:block bg-neutral-900 rounded-3xl overflow-hidden border border-white/10">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white">
-                  <th className="py-6 pl-8 text-left font-medium">Dish</th>
-                  <th className="py-6 text-left font-medium">Restaurant</th>
-                  <th className="py-6 text-left font-medium">Category</th>
-                  <th className="py-6 text-right font-medium">Price</th>
-                  <th className="py-6 pr-8 text-right font-medium">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/10">
-                {items.map((item, index) => (
-                  <tr key={item._id} className="hover:bg-white/5 transition-colors group">
-                    <td className="pl-8 py-6">
-                      <div className="flex items-center gap-4">
-                        {item.image && (
-                          <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-white/10">
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        )}
-                        <p className="font-semibold text-white">{item.name}</p>
-                      </div>
-                    </td>
-                    <td className="py-6 text-neutral-300">{item.restaurantName}</td>
-                    <td className="py-6">
-                      <span className="inline-block px-4 py-1.5 bg-emerald-500/10 text-emerald-400 rounded-full text-sm">
-                        {item.category || "Food"}
-                      </span>
-                    </td>
-                    <td className="py-6 text-right font-bold text-emerald-400 text-xl">
-                      ৳{item.price}
-                    </td>
-                    <td className="py-6 pr-8 text-right">
-                      <button
-                        onClick={() => handleDelete(item._id)}
-                        className="p-3 text-neutral-400 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all group-hover:scale-110"
-                      >
-                        <Trash2 size={22} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {total > 0 && (
+          <>
+            <div className="hidden md:block backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[600px] border-collapse text-left">
+                  <thead>
+                    <tr className="bg-white/5 border-b border-white/10">
+                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-neutral-400">Dish</th>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-neutral-400">Category</th>
+                      <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-neutral-400">Price</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-neutral-400">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {items.map((item) => {
+                      const displayName = item.name || item.productName || "Untitled dish";
+                      return (
+                        <tr key={item._id} className="hover:bg-white/[0.03] transition-colors group">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              {item.image ? (
+                                <Image
+                                  height={44}
+                                  width={44}
+                                  src={item.image}
+                                  alt={displayName}
+                                  unoptimized
+                                  className="w-11 h-11 rounded-xl object-cover border border-white/10 group-hover:scale-105 transition-transform"
+                                />
+                              ) : (
+                                <div className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+                                  <UtensilsCrossed size={16} />
+                                </div>
+                              )}
+                              <span className="text-sm font-medium text-white truncate max-w-[220px]">
+                                {displayName}
+                              </span>
+                            </div>
+                          </td>
 
-        {/* Mobile Cards */}
-        {items.length > 0 && (
-          <div className="md:hidden space-y-4">
-            {items.map((item) => (
-              <div
-                key={item._id}
-                className="bg-neutral-900 rounded-3xl p-5 border border-white/10 hover:border-emerald-500/30 transition-all"
-              >
-                <div className="flex gap-4">
-                  {item.image && (
-                    <div className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0">
-                      <Image src={item.image} alt={item.name} fill className="object-cover" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex justify-between">
-                      <h3 className="text-lg font-semibold text-white line-clamp-2">
-                        {item.name}
-                      </h3>
-                      <button
-                        onClick={() => handleDelete(item._id)}
-                        className="text-red-500 hover:bg-red-500/10 p-2 rounded-xl -mt-1"
-                      >
-                        <Trash2 size={20} />
-                      </button>
-                    </div>
+                          <td className="px-6 py-4">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg w-fit">
+                              <Tag className="w-3.5 h-3.5" />
+                              {item.category || "—"}
+                            </span>
+                          </td>
 
-                    <p className="text-emerald-400 font-medium mt-2">
-                      ৳{item.price}
-                    </p>
-                    <p className="text-neutral-400 text-sm mt-1">{item.restaurantName}</p>
-                  </div>
-                </div>
+                          <td className="px-6 py-4">
+                            <span className="text-sm font-semibold text-white">
+                              ৳{item.price?.toLocaleString() ?? "—"}
+                            </span>
+                          </td>
+
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-center">
+                              <DeleteFavoriteBtn item={{ _id: item._id, name: displayName }} />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
+            </div>
+
+            <div className="md:hidden flex flex-col gap-4">
+              {items.map((item) => {
+                const displayName = item.name || item.productName || "Untitled dish";
+                return (
+                  <div key={item._id} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <div className="flex items-start gap-3 mb-4">
+                      {item.image ? (
+                        <Image
+                          height={52}
+                          width={52}
+                          src={item.image}
+                          alt={displayName}
+                          unoptimized
+                          className="w-[52px] h-[52px] rounded-xl object-cover border border-white/10 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-[52px] h-[52px] rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+                          <UtensilsCrossed size={20} />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <p className="text-sm font-semibold text-white truncate">{displayName}</p>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
+                          <Tag className="w-3 h-3" /> {item.category || "—"}
+                        </span>
+                      </div>
+                      <span className="text-sm font-bold text-white shrink-0">
+                        ৳{item.price?.toLocaleString() ?? "—"}
+                      </span>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/5">
+                      <DeleteFavoriteBtn item={{ _id: item._id, name: displayName }} full />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>
   );
-}
+};
+
+export default Page;

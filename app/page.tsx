@@ -9,6 +9,7 @@ import CTA from "./Components/CTA";
 import Blogs from "./Components/Blog";
 import FAQ from "./Components/FAQ";
 import Newsletter from "./Components/Newsletter";
+import Page from "./review/page";
 
 export default function Home() {
   return (
@@ -17,9 +18,7 @@ export default function Home() {
       <Categories />
       <HighlightsSection />
       <Statistics />
-      
-      {/* নতুন যোগ করা সেকশনগুলো */}
-      <Testimonials />
+      <Page/>
       <CTA />
       <Blogs />
       <FAQ />
