@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@heroui/react";
-import { ArrowRight, Utensils } from "lucide-react"; // আপনি চাইলে এখানেও react-icons ব্যবহার করতে পারেন
+import { ArrowRight, Utensils } from "lucide-react";
 
 export default function CTA() {
   return (
@@ -33,13 +33,15 @@ export default function CTA() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {/* Order Now Button - Error fixed by adding icon as children */}
               <Button 
                 size="lg" 
-                className="bg-white text-orange-600 font-bold px-10 hover:bg-gray-100 transition-all"
-                endContent={<ArrowRight size={20} />}
+                className="bg-white text-orange-600 font-bold px-10 hover:bg-gray-100 transition-all flex items-center gap-2"
               >
-                Order Now
+                Order Now <ArrowRight size={20} />
               </Button>
+
+              {/* View Menu Button */}
               <Button 
                 size="lg" 
                 variant="bordered"
