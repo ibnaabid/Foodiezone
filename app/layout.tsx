@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar, { PremiumNavbar } from "./Components/Navbar";
+import Navbar from "./Components/Navbar";
 import ChatWidget from "./ChatAi/page";
 import { Toaster } from "react-hot-toast";
 // import { PremiumNavbar } from "./Components/Navbar";
