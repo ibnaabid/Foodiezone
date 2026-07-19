@@ -1,7 +1,8 @@
 // proxy.ts
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+
 import { getSessionCookie } from "better-auth/cookies";
+import { auth } from "./lib/auth";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
