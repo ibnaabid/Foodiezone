@@ -30,64 +30,67 @@ export default function ChatWidget() {
       : "👋 Hi! Ask me about menu, orders, or anything.";
 
   const sendMessage = async () => {
-    if (!input.trim() || loading || streaming) return;
+  if (!input.trim() || loading || streaming) return;
 
-    if (!session?.user) {
-      setMessages(prev => [...prev,
-        { role: "user", content: input },
-        { role: "assistant", content: "Please log in first." }
-      ]);
-      setInput("");
-      return;
-    }
-
-    const userMsg = input;
-    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+  if (!session?.user) {
+    setMessages(prev => [...prev, 
+      { role: "user", content: input },
+      { role: "assistant", content: "Please log in first." }
+    ]);
     setInput("");
-    setLoading(true);
+    return;
+  }
 
-    // assistant এর জন্য placeholder bubble, stream আসার সাথে সাথে এটাই fill হবে
-    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+  const userMsg = input.trim();
+  setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+  setInput("");
+  setLoading(true);
 
-    try {
-      const res = await fetch("https://foodie-zone-backend.vercel.app/chat", {
-        method: "POST",
-        credentials: "include", // ⚠️ Better Auth cookie পাঠানোর জন্য জরুরি, আগে missing ছিল
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: session.user.id,
-          role: userRole || "customer",
-          message: userMsg,
-        }),
-      });
+  // Add empty assistant message for streaming
+  setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
-      if (!res.body) throw new Error("No stream body");
+  try {
+    const res = await fetch("https://foodie-zone-backend.vercel.app/chat", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: session.user.id,
+        role: userRole || "customer",
+        message: userMsg,
+      }),
+    });
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
+    if (!res.ok) throw new Error("Server error");
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error("No reader");
 
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop() || "";
+    const decoder = new TextDecoder();
+    let buffer = "";
 
-        for (const part of parts) {
-          if (!part.startsWith("data: ")) continue;
-          const payload = JSON.parse(part.slice(6));
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        if (!part.trim() || !part.startsWith("data: ")) continue;
+
+        try {
+          const jsonStr = part.slice(6).trim();
+          const payload = JSON.parse(jsonStr);
 
           if (payload.token) {
             setLoading(false);
             setStreaming(true);
+
             setMessages(prev => {
               const updated = [...prev];
-              updated[updated.length - 1] = {
-                role: "assistant",
-                content: updated[updated.length - 1].content + payload.token,
-              };
+              updated[updated.length - 1].content += payload.token;
               return updated;
             });
           }
@@ -95,26 +98,31 @@ export default function ChatWidget() {
           if (payload.error) {
             setMessages(prev => {
               const updated = [...prev];
-              updated[updated.length - 1] = { role: "assistant", content: payload.error };
+              updated[updated.length - 1].content = payload.error;
               return updated;
             });
           }
+
+          if (payload.done) {
+            setStreaming(false);
+          }
+        } catch (e) {
+          console.warn("Failed to parse SSE:", part);
         }
       }
-    } catch (err) {
-      setMessages(prev => {
-        const updated = [...prev];
-        updated[updated.length - 1] = {
-          role: "assistant",
-          content: "Connection error. Please try again.",
-        };
-        return updated;
-      });
-    } finally {
-      setLoading(false);
-      setStreaming(false);
     }
-  };
+  } catch (err) {
+    console.error(err);
+    setMessages(prev => {
+      const updated = [...prev];
+      updated[updated.length - 1].content = "Connection error. Please try again.";
+      return updated;
+    });
+  } finally {
+    setLoading(false);
+    setStreaming(false);
+  }
+};
 
   return (
     <>
