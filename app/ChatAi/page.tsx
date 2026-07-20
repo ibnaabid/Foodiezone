@@ -28,7 +28,7 @@ export default function ChatWidget() {
       ? "👋 Hello! How can I help with your restaurant today?"
       : "👋 Hi! Ask me about menu, orders, or anything.";
 
-  const sendMessage = async () => {
+const sendMessage = async () => {
     if (!input.trim() || loading) return;
 
     if (!session?.user) {
@@ -45,9 +45,6 @@ export default function ChatWidget() {
     setInput("");
     setLoading(true);
 
-    // Add empty assistant message for streaming
-    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
-
     try {
       const res = await fetch("https://foodie-zone-backend.vercel.app/chat", {
         method: "POST",
@@ -58,62 +55,24 @@ export default function ChatWidget() {
         }),
       });
 
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data = await res.json();
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response stream");
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-
-        buffer = lines.pop() || ""; // Keep incomplete line in buffer
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const jsonStr = line.slice(6).trim(); // "data: " remove
-
-            if (jsonStr === "") continue;
-
-            try {
-              const payload = JSON.parse(jsonStr);
-
-              if (payload.token) {
-                // Append token to last assistant message
-                setMessages(prev => {
-                  const updated = [...prev];
-                  updated[updated.length - 1].content += payload.token;
-                  return updated;
-                });
-              } 
-              else if (payload.done) {
-                // Streaming finished
-                setLoading(false);
-              }
-            } catch (e) {
-              console.error("Parse error:", e, jsonStr);
-            }
-          }
-        }
+      if (!res.ok) {
+        throw new Error(data.error || "Server error");
       }
+
+      // সার্ভার থেকে পাওয়া পূর্ণাঙ্গ মেসেজটি অ্যাসিস্ট্যান্ট মেসেজ হিসেবে যুক্ত করা
+      setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+
     } catch (err) {
       console.error("Chat Error:", err);
-      setMessages(prev => {
-        const updated = [...prev];
-        updated[updated.length - 1].content = "Sorry, something went wrong. Please try again.";
-        return updated;
-      });
+      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
     } finally {
       setLoading(false);
     }
   };
 
+  
   return (
     <>
       {!isOpen && (
