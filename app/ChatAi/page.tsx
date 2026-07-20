@@ -56,12 +56,10 @@ const sendMessage = async () => {
       });
 
       const data = await res.json();
+      console.log(data)
 
-      if (!res.ok) {
-        throw new Error(data.error || "Server error");
-      }
+      if (!res.ok) throw new Error(data.error || "Server error");
 
-      // সার্ভার থেকে পাওয়া পূর্ণাঙ্গ মেসেজটি অ্যাসিস্ট্যান্ট মেসেজ হিসেবে যুক্ত করা
       setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
 
     } catch (err) {
@@ -70,9 +68,8 @@ const sendMessage = async () => {
     } finally {
       setLoading(false);
     }
-  };
+};
 
-  
   return (
     <>
       {!isOpen && (
