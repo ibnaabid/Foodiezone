@@ -43,7 +43,7 @@ export default function RegisterPage() {
   const handleGoogleSignUp = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/onboarding", // Google login শেষে role select page এ পাঠাবে
+      callbackURL: "", // Google login শেষে role select page এ পাঠাবে
     });
   };
 
