@@ -29,13 +29,13 @@ export default function ChatWidget() {
       ? "👋 Hello! How can I help with your restaurant today?"
       : "👋 Hi! Ask me about menu, orders, or anything.";
 
-  const sendMessage = async () => {
+const sendMessage = async () => {
   if (!input.trim() || loading || streaming) return;
 
   if (!session?.user) {
     setMessages(prev => [...prev, 
       { role: "user", content: input },
-      { role: "assistant", content: "Please log in first." }
+      { role: "assistant", content: "Please log in first to use the AI chat." }
     ]);
     setInput("");
     return;
@@ -46,14 +46,15 @@ export default function ChatWidget() {
   setInput("");
   setLoading(true);
 
-  // Add empty assistant message for streaming
+  // Streaming এর জন্য প্রাথমিক স্টেট
   setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
   try {
     const res = await fetch("https://foodie-zone-backend.vercel.app/chat", {
       method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json" 
+      },
       body: JSON.stringify({
         userId: session.user.id,
         role: userRole || "customer",
@@ -61,61 +62,55 @@ export default function ChatWidget() {
       }),
     });
 
-    if (!res.ok) throw new Error("Server error");
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
 
     const reader = res.body?.getReader();
-    if (!reader) throw new Error("No reader");
+    if (!reader) throw new Error("No reader found");
 
     const decoder = new TextDecoder();
-    let buffer = "";
+    let isStreaming = true;
 
-    while (true) {
+    while (isStreaming) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        isStreaming = false;
+        break;
+      }
 
-      buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split("\n\n");
-      buffer = parts.pop() || "";
+      setLoading(false); // ডাটা আসা শুরু হলেই লোডিং অফ
+      setStreaming(true);
 
-      for (const part of parts) {
-        if (!part.trim() || !part.startsWith("data: ")) continue;
-
-        try {
-          const jsonStr = part.slice(6).trim();
-          const payload = JSON.parse(jsonStr);
-
-          if (payload.token) {
-            setLoading(false);
-            setStreaming(true);
-
-            setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1].content += payload.token;
-              return updated;
-            });
+      const chunk = decoder.decode(value, { stream: true });
+      
+      // SSE হ্যান্ডলিং
+      const lines = chunk.split("\n");
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const jsonStr = line.replace("data: ", "").trim();
+          if (jsonStr === "[DONE]") {
+            isStreaming = false;
+            break;
           }
-
-          if (payload.error) {
-            setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1].content = payload.error;
-              return updated;
-            });
+          try {
+            const payload = JSON.parse(jsonStr);
+            if (payload.token) {
+              setMessages(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1].content += payload.token;
+                return updated;
+              });
+            }
+          } catch (e) {
+            console.error("JSON parse error", e);
           }
-
-          if (payload.done) {
-            setStreaming(false);
-          }
-        } catch (e) {
-          console.warn("Failed to parse SSE:", part);
         }
       }
     }
   } catch (err) {
-    console.error(err);
+    console.error("Chat Error:", err);
     setMessages(prev => {
       const updated = [...prev];
-      updated[updated.length - 1].content = "Connection error. Please try again.";
+      updated[updated.length - 1].content = "Error: Connection lost. Please try again.";
       return updated;
     });
   } finally {
