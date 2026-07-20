@@ -15,7 +15,6 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [streaming, setStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const userRole = (session?.user as any)?.role as "customer" | "restaurant" | undefined;
@@ -29,95 +28,91 @@ export default function ChatWidget() {
       ? "👋 Hello! How can I help with your restaurant today?"
       : "👋 Hi! Ask me about menu, orders, or anything.";
 
-const sendMessage = async () => {
-  if (!input.trim() || loading || streaming) return;
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
 
-  if (!session?.user) {
-    setMessages(prev => [...prev, 
-      { role: "user", content: input },
-      { role: "assistant", content: "Please log in first to use the AI chat." }
-    ]);
+    if (!session?.user) {
+      setMessages(prev => [...prev, 
+        { role: "user", content: input },
+        { role: "assistant", content: "Please log in first to use the AI chat." }
+      ]);
+      setInput("");
+      return;
+    }
+
+    const userMsg = input.trim();
+    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setInput("");
-    return;
-  }
+    setLoading(true);
 
-  const userMsg = input.trim();
-  setMessages(prev => [...prev, { role: "user", content: userMsg }]);
-  setInput("");
-  setLoading(true);
+    // Add empty assistant message for streaming
+    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
-  // Streaming এর জন্য প্রাথমিক স্টেট
-  setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+    try {
+      const res = await fetch("https://foodie-zone-backend.vercel.app/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: session.user.id,
+          message: userMsg,
+        }),
+      });
 
-  try {
-    const res = await fetch("https://foodie-zone-backend.vercel.app/chat", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json" 
-      },
-      body: JSON.stringify({
-        userId: session.user.id,
-        role: userRole || "customer",
-        message: userMsg,
-      }),
-    });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
-    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response stream");
 
-    const reader = res.body?.getReader();
-    if (!reader) throw new Error("No reader found");
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-    const decoder = new TextDecoder();
-    let isStreaming = true;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-    while (isStreaming) {
-      const { done, value } = await reader.read();
-      if (done) {
-        isStreaming = false;
-        break;
-      }
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
 
-      setLoading(false); // ডাটা আসা শুরু হলেই লোডিং অফ
-      setStreaming(true);
+        buffer = lines.pop() || ""; // Keep incomplete line in buffer
 
-      const chunk = decoder.decode(value, { stream: true });
-      
-      // SSE হ্যান্ডলিং
-      const lines = chunk.split("\n");
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          const jsonStr = line.replace("data: ", "").trim();
-          if (jsonStr === "[DONE]") {
-            isStreaming = false;
-            break;
-          }
-          try {
-            const payload = JSON.parse(jsonStr);
-            if (payload.token) {
-              setMessages(prev => {
-                const updated = [...prev];
-                updated[updated.length - 1].content += payload.token;
-                return updated;
-              });
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const jsonStr = line.slice(6).trim(); // "data: " remove
+
+            if (jsonStr === "") continue;
+
+            try {
+              const payload = JSON.parse(jsonStr);
+
+              if (payload.token) {
+                // Append token to last assistant message
+                setMessages(prev => {
+                  const updated = [...prev];
+                  updated[updated.length - 1].content += payload.token;
+                  return updated;
+                });
+              } 
+              else if (payload.done) {
+                // Streaming finished
+                setLoading(false);
+              }
+            } catch (e) {
+              console.error("Parse error:", e, jsonStr);
             }
-          } catch (e) {
-            console.error("JSON parse error", e);
           }
         }
       }
+    } catch (err) {
+      console.error("Chat Error:", err);
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1].content = "Sorry, something went wrong. Please try again.";
+        return updated;
+      });
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Chat Error:", err);
-    setMessages(prev => {
-      const updated = [...prev];
-      updated[updated.length - 1].content = "Error: Connection lost. Please try again.";
-      return updated;
-    });
-  } finally {
-    setLoading(false);
-    setStreaming(false);
-  }
-};
+  };
 
   return (
     <>
@@ -147,7 +142,7 @@ const sendMessage = async () => {
             </button>
           </div>
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
             {!session?.user && (
               <div className="text-center py-12">
                 <LogIn className="w-12 h-12 mx-auto text-amber-400 mb-4" />
@@ -169,17 +164,15 @@ const sendMessage = async () => {
                     ? "bg-emerald-600 text-white"
                     : "bg-white/5 border border-white/10 text-neutral-200"
                 }`}>
-                  {msg.content}
+                  {msg.content || <span className="opacity-50">Thinking...</span>}
                 </div>
               </div>
             ))}
 
-            {loading && (
+            {loading && messages.length > 0 && (
               <div className="flex justify-start">
-                <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl flex gap-1">
-                  <span className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <span className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <span className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" />
+                <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl text-neutral-400 text-sm">
+                  AI is thinking...
                 </div>
               </div>
             )}
@@ -192,16 +185,16 @@ const sendMessage = async () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                placeholder={userRole === "restaurant" ? "Ask about orders..." : "Ask about menu..."}
-                disabled={loading || streaming}
+                placeholder={userRole === "restaurant" ? "Ask about orders..." : "Ask me anything about food..."}
+                disabled={loading}
                 className="flex-1 bg-neutral-800 border border-white/10 rounded-2xl px-4 py-3 text-sm focus:border-emerald-500 outline-none"
               />
               <button
                 onClick={sendMessage}
-                disabled={loading || streaming || !input.trim()}
-                className="w-11 h-11 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-2xl flex items-center justify-center"
+                disabled={loading || !input.trim()}
+                className="w-11 h-11 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-2xl flex items-center justify-center transition"
               >
-                {loading || streaming ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               </button>
             </div>
           </div>
